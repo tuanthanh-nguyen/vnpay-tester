@@ -146,24 +146,6 @@ function sign_with_private_key(s, pk) {
     return signature.toString('base64')
 }
 
-function vnpay_signature_link_request(r_id, r_time, e_m) {
-    const s = `${r_id}${r_time}${e_m}`
-    const sign = crypto.createSign('SHA256')
-    sign.write(s)
-    sign.end()
-    const signature = sign.sign(PRIVATE_KEY_RSA, 'base64')
-    return signature.toString('base64')
-}
-
-function vnpay_signature_link_confirm(r_id, r_time, e_m, confirm_id, otp) {
-    const s = `${r_id}${r_time}${e_m}${confirm_id}${otp}`
-    const sign = crypto.createSign('SHA256')
-    sign.write(s)
-    sign.end()
-    const signature = sign.sign(PRIVATE_KEY_RSA, 'base64')
-    return signature.toString('base64')
-}
-
 function generateRandomString(length) {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let randomString = '';
