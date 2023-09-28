@@ -22,7 +22,7 @@ async function run() {
      assert(data_link_request !== null)
      assert(data_link_request.code === '00')
      assert(typeof data_link_request?.data?.confirmId === 'string')
-     // console.log(data_link_request)
+     console.log('/link-request', data_link_request)
 
     // get confirmID
     const confirmId = data_link_request.data.confirmId
@@ -31,7 +31,7 @@ async function run() {
     assert(data_link_confirm !== null)
     assert(data_link_confirm.code === '00')
     assert(typeof data_link_confirm?.data?.ewAccNo === 'string')
-    // console.log(data_link_confirm)
+    console.log('/link-confirm', data_link_confirm)
 
     const tripId = 'd0948d0d-2798-4f7d-91a9-61415cb562f9-1694161223403324103'
     const eWalletMobileNo = '0912345678'
@@ -49,7 +49,7 @@ async function run() {
     )
     assert(pay_on_behalf !== null)
     assert(pay_on_behalf.data.statusCode === '400')
-    // console.log(pay_on_behalf)
+    console.log('/pay-for-driver', pay_on_behalf)
 
     const driverIncomeCheckSum = sign_Hmac('' + tripId + '|' + SECRET_KEY, SECRET_KEY)
     const query_driver_income = await queryDriverIncome(
@@ -58,7 +58,7 @@ async function run() {
     )
     assert(query_driver_income !== null)
     assert(query_driver_income.data.statusCode === '400')
-    // console.log(query_driver_income)
+    console.log('/query-driver-income-txn', query_driver_income)
 }
 
 function sign_Hmac(s, secret) {
@@ -109,7 +109,7 @@ async function getdDataLinkConfirm(requestId, requestTime, ewMobile, partnerId, 
             ewCustomerId,
             confirmId,
             otp,
-            signature: vnpay_signature_link_confirm(requestId, requestTime, ewMobile, confirmId, otp),
+            signature: sign_with_private_key(requestId + requestTime + ewMobile + confirmId + otp, PRIVATE_KEY_RSA),
         },
         {
             headers: {
@@ -128,7 +128,7 @@ async function getdDataLinkRequest(requestId, requestTime, ewMobile, partnerId, 
             partnerId,
             ewCustomerName,
             ewCustomerId,
-            signature: vnpay_signature_link_request(requestId, requestTime, ewMobile),
+            signature: sign_with_private_key(requestId + requestTime + ewMobile, PRIVATE_KEY_RSA),
         },
         {
             headers: {
@@ -136,6 +136,14 @@ async function getdDataLinkRequest(requestId, requestTime, ewMobile, partnerId, 
             }
         }
     ).then(res => res.data).catch(_ => null)
+}
+
+function sign_with_private_key(s, pk) {
+    const sign = crypto.createSign('SHA256')
+    sign.write(s)
+    sign.end()
+    const signature = sign.sign(pk, 'base64')
+    return signature.toString('base64')
 }
 
 function vnpay_signature_link_request(r_id, r_time, e_m) {
