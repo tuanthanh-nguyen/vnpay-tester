@@ -1,9 +1,11 @@
+require('dotenv').config({})
 const crypto = require('node:crypto')
 const fs = require('node:fs')
 const assert = require('node:assert')
 const axios = require('axios')
 
 const PRIVATE_KEY_RSA = fs.readFileSync('./vnpay_private_key_prd.pem')
+const SECRET_KEY = process.env.SECRET_KEY
 
 const requestId = generateRandomString(8)
 const requestTime = '25092023000000'
@@ -16,11 +18,11 @@ const otp = '123456'
 run()
 
 async function run() {
-    const data_link_request = await getdDataLinkRequest(requestId, requestTime, ewMobile, partnerId, ewCustomerName, ewCustomerId)
-    assert(data_link_request !== null)
-    assert(data_link_request.code === '00')
-    assert(typeof data_link_request?.data?.confirmId === 'string')
-    console.log(data_link_request)
+     const data_link_request = await getdDataLinkRequest(requestId, requestTime, ewMobile, partnerId, ewCustomerName, ewCustomerId)
+     assert(data_link_request !== null)
+     assert(data_link_request.code === '00')
+     assert(typeof data_link_request?.data?.confirmId === 'string')
+     // console.log(data_link_request)
 
     // get confirmID
     const confirmId = data_link_request.data.confirmId
@@ -29,7 +31,70 @@ async function run() {
     assert(data_link_confirm !== null)
     assert(data_link_confirm.code === '00')
     assert(typeof data_link_confirm?.data?.ewAccNo === 'string')
-    console.log(data_link_confirm)
+    // console.log(data_link_confirm)
+
+    const tripId = 'd0948d0d-2798-4f7d-91a9-61415cb562f9-1694161223403324103'
+    const eWalletMobileNo = '0912345678'
+    const eWalletAcc = '1234567890'
+    const vnPayFeeAmount = null || '0' // must required, if null then translat to be zero
+    const incomeAmount = 35000
+    const payOnBeHalfcheckSum = sign_Hmac('' + tripId + '|' + eWalletMobileNo + '|' + eWalletAcc + '|' + incomeAmount + '|' + vnPayFeeAmount + '|' + SECRET_KEY, SECRET_KEY)
+    const pay_on_behalf = await payOnBehalfVnpay(
+        tripId, 
+        eWalletMobileNo,
+        eWalletAcc,
+        incomeAmount,
+        vnPayFeeAmount,
+        payOnBeHalfcheckSum
+    )
+    assert(pay_on_behalf !== null)
+    assert(pay_on_behalf.data.statusCode === '400')
+    // console.log(pay_on_behalf)
+
+    const driverIncomeCheckSum = sign_Hmac('' + tripId + '|' + SECRET_KEY, SECRET_KEY)
+    const query_driver_income = await queryDriverIncome(
+        tripId,
+        driverIncomeCheckSum
+    )
+    assert(query_driver_income !== null)
+    assert(query_driver_income.data.statusCode === '400')
+    // console.log(query_driver_income)
+}
+
+function sign_Hmac(s, secret) {
+    return crypto.createHmac('sha256', secret).update(s).digest("hex");
+}
+
+async function queryDriverIncome(tripId, checkSum) {
+  return axios.post('https://mbapi.vnpaytest.vn/vntaxi/emddi/query-driver-income-txn',
+      {
+          tripId,
+          checkSum
+      },
+      {
+          headers: {
+              'app-id': 'SDK_VNTAXI_EXT_EMDDI',
+          }
+      }
+  ).then(res => res.data).catch(_ => null)
+}
+
+async function payOnBehalfVnpay(tripId, ewalletMobileNo, ewalletAcc, incomeAmount, vnPayFeeAmount, checkSum) {
+  return axios.post('https://mbapi.vnpaytest.vn/vntaxi/emddi/pay-for-driver',
+      {
+          tripId,
+          ewalletMobileNo,
+          ewalletAcc,
+          incomeAmount,
+          vnPayFeeAmount,
+          checkSum
+      },
+      {
+          headers: {
+              'app-id': 'SDK_VNTAXI_EXT_EMDDI',
+          }
+      }
+  ).then(res => res.data).catch(_ => null)
 }
 
 async function getdDataLinkConfirm(requestId, requestTime, ewMobile, partnerId, ewCustomerName, ewCustomerId, confirmId, otp) {
