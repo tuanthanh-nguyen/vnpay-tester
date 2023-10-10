@@ -79,14 +79,14 @@ async function queryDriverIncome(tripId, checkSum) {
   ).then(res => res.data).catch(_ => null)
 }
 
-async function payOnBehalfVnpay(tripId, ewalletMobileNo, ewalletAcc, incomeAmount, vnPayFeeAmount, checkSum) {
+async function payOnBehalfVnpay(tripId, eWalletMobileNo, eWalletAcc, incomeAmount, vnpayFeeAmount, checkSum) {
   return axios.post('https://mbapi.vnpaytest.vn/vntaxi/emddi/pay-for-driver',
       {
           tripId,
-          ewalletMobileNo,
-          ewalletAcc,
+          eWalletMobileNo,
+          eWalletAcc,
           incomeAmount,
-          vnPayFeeAmount,
+          vnpayFeeAmount,
           checkSum
       },
       {
@@ -94,7 +94,10 @@ async function payOnBehalfVnpay(tripId, ewalletMobileNo, ewalletAcc, incomeAmoun
               'app-id': 'SDK_VNTAXI_EXT_EMDDI',
           }
       }
-  ).then(res => res.data).catch(_ => null)
+  ).then(res => {
+      console.log(res)
+      return res.data
+  }).catch(_ => null)
 }
 
 async function getdDataLinkConfirm(requestId, requestTime, ewMobile, partnerId, ewCustomerName, ewCustomerId, confirmId, otp) {
