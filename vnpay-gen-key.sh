@@ -19,4 +19,4 @@ openssl req \
 -days 3000 \
 -subj "/C=VN/ST=HN/L=HN/O=EMDDI/CN=EMDDI" \
 -key $HOME/vnpay_prod/private-k.pem \
--out $HOME/vnpay_prod/vnpay_public_cert \
+-out $HOME/vnpay_prod/emddi_cert \
